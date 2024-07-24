@@ -335,18 +335,16 @@ final class PmCommands extends DrushCommands
         // Add dependencies to the list. The new modules will be processed as
         // the while loop continues.
         foreach (array_keys($module_list) as $module) {
-            foreach (array_keys($module_data[$module]->requires) as $dependency) {
+            foreach ($module_data[$module]->requires as $dependency => $requirement) {
                 if (!isset($module_data[$dependency])) {
                     // The dependency does not exist.
                     throw new MissingDependencyException("Unable to install modules: module '$module' is missing its dependency module $dependency.");
                 }
 
-                /** @var \Drupal\Core\Extension\Dependency $requirement */
-                $requirement = $module_data[$module]->requires[$dependency];
                 $version_constraint = $requirement->getConstraintString();
                 $installed_version = $module_data[$dependency]->info['version'];
                 if ($version_constraint && $installed_version && !$requirement->isCompatible($installed_version)) {
-                    // The dependency does not exist.
+                    // Installed dependency version does not pass declared constraint.
                     throw new CommandFailedException("Unable to install modules: module '$module' requires version $version_constraint of $dependency, $installed_version installed.");
                 }
 
