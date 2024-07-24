@@ -17,6 +17,7 @@ use Drush\Attributes as CLI;
 use Drush\Boot\DrupalBootLevels;
 use Drush\Commands\DrushCommands;
 use Drush\Drush;
+use Drush\Exceptions\CommandFailedException;
 use Drush\Exceptions\UserAbortException;
 use Drush\Utils\StringUtils;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -338,6 +339,15 @@ final class PmCommands extends DrushCommands
                 if (!isset($module_data[$dependency])) {
                     // The dependency does not exist.
                     throw new MissingDependencyException("Unable to install modules: module '$module' is missing its dependency module $dependency.");
+                }
+
+                /** @var \Drupal\Core\Extension\Dependency $requirement */
+                $requirement = $module_data[$module]->requires[$dependency];
+                $version_constraint = $requirement->getConstraintString();
+                $installed_version = $module_data[$dependency]->info['version'];
+                if ($version_constraint && $installed_version && !$requirement->isCompatible($installed_version)) {
+                    // The dependency does not exist.
+                    throw new CommandFailedException("Unable to install modules: module '$module' requires version $version_constraint of $dependency, $installed_version installed.");
                 }
 
                 // Skip already installed modules.
